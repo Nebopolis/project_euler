@@ -1,8 +1,9 @@
-def sumMultiple(seq, *multiples)
-    seq.select{|i|
-        multiples.any? {|multiple|
-            i % multiple == 0 }
-        }.reduce(:+)
+def sumMultiple(sequence, *multiples)
+    sequence.select do |i|
+        multiples.any? do |multiple|
+            i % multiple == 0 
+        end
+    end.reduce(:+)
 end
 
 fib = Enumerator.new do |yielder|

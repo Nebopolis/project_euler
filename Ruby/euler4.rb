@@ -8,7 +8,7 @@ def palendromic_numbers1(digits)
     min = 10 ** (digits - 1)
     results = []
     (min..max).each do |i|
-        (min..max).each do |j|
+        (i..max).each do |j|
             results << i * j
         end
     end
@@ -40,4 +40,22 @@ def palendromic_numbers2(digits)
 end
 
 palendromic_numbers2(3)
+
+def palendromic_numbers3(digits)
+    max = (10 ** digits) - 1
+    min = 10 ** (digits - 1)
+    result = 0
+    (min..max).each do |i|
+        (i..max).each do |j|
+            sum = i * j
+            result = sum if sum > result && sum.to_s.reverse.to_i == sum
+        end
+    end
+    result
+end
+
+puts palendromic_numbers3(3) #fastest and nicest
+
+
+
 

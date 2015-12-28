@@ -1,4 +1,4 @@
-def palendromic_set(digits)
+    def palendromic_set(digits)
     max = (10 ** (digits))
     (max * max).downto(0).select {|n| n.to_s.reverse.to_i == n}.to_a
 end

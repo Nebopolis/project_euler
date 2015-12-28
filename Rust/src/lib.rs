@@ -1,8 +1,9 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
-extern crate primal;
+extern crate primes;
 extern crate num;
-use primal::StreamingSieve;
+use primes::PrimeSet;
+use std::str::FromStr;
 //use num::{BigUint, Zero, One};
 //use num::bigint::ToBigUint;
 
@@ -36,7 +37,7 @@ pub fn p1(max: u64) -> u64 {
 /// assert_eq!(4_613_732, p2(4_000_000));
 /// ```
 pub fn p2(max: u64) -> u64 {
-    let mut it = Fibonacci::new().take_while(|i| i < &max);
+    let it = Fibonacci::new().take_while(|i| i < &max);
     it.fold(0, |acc, i| {
         if i%2 == 0 {
             acc + i
@@ -56,7 +57,7 @@ pub fn p2(max: u64) -> u64 {
 /// assert_eq!(6857, p3(600_851_475_143));
 /// ```
 pub fn p3(max: u64) -> u64 {
-    unimplemented!();
+    *primes::factors(max).iter().max().unwrap()
 }
 
 /// ### [Largest palindrome product](https://projecteuler.net/problem=4)
@@ -66,10 +67,16 @@ pub fn p3(max: u64) -> u64 {
 /// # Examples
 /// ```
 /// use euler::p4;
-/// assert_eq!(906_609, p4(999));
+/// assert_eq!(906_609, p4(3));
 /// ```
 pub fn p4(max: u64) -> u64 {
-    unimplemented!();
+    let range = u64::pow(10, max as u32) - 1;
+    let list = Sum::new(range);
+    let result = list.filter(|&i| { 
+        let a: String = i.to_string().chars().rev().collect();
+        i == u64::from_str(&a).unwrap()
+    });
+    result.max().unwrap()
 }
 
 /// ### [Smallest multiple](https://projecteuler.net/problem=5)
@@ -115,7 +122,10 @@ pub fn p6(max: u64) -> u64 {
 /// assert_eq!(104743, p7(10_001));
 /// ```
 pub fn p7(max: usize) -> u64 {
-   primal::StreamingSieve::nth_prime(max) as u64
+    let max = max - 1;
+    let mut pset = PrimeSet::new();
+    let prime = pset.get(max);
+    prime
 }
 
 /// ### [Largest product in a series](https://projecteuler.net/problem=8)
@@ -170,7 +180,6 @@ pub fn p8(width: usize) -> u64 {
     high_total
 }
 
-
 struct Fibonacci {
     curr: u64,
     next: u64,
@@ -194,5 +203,38 @@ impl Iterator for Fibonacci {
         self.next = new_next;
 
         Some(self.curr)
+    }
+}
+
+struct Sum {
+    a: u64,
+    b: u64,
+    max: u64
+}
+
+impl Sum {
+    pub fn new(max: u64) -> Sum {
+        Sum {
+            a: max,
+            b: max,
+            max: max
+        }
+    }
+}
+
+impl Iterator for Sum {
+    type Item = u64;
+    fn next(&mut self) -> Option<u64> {
+        let sum = self.a * self.b;
+        self.b = self.b - 1;
+        if self.b > self.max / 2 {
+            self.b = self.b - 1;
+        } else if self.a > self.max / 2 {
+            self.b = self.max;
+            self.a = self.a - 1;
+        } else {
+            return None
+        }
+        Some(sum)
     }
 }

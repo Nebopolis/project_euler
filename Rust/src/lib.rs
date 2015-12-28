@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
+#![feature(iter_arith)]
 extern crate primes;
 extern crate num;
 use primes::PrimeSet;
@@ -18,13 +19,9 @@ use std::str::FromStr;
 /// assert_eq!(233_168, p1(1_000));
 /// ```
 pub fn p1(max: u64) -> u64 {
-    (1..max).fold(0u64, |acc, i| {
-        if i%3 == 0 || i%5 == 0 {
-            acc + i
-        } else {
-            acc
-        }
-    })
+    (1..max)
+    .filter(|i| i%3 == 0 || i%5 == 0)
+    .sum()
 }
 
 /// ### [Even Fibonacci numbers](https://projecteuler.net/problem=2)
@@ -37,14 +34,10 @@ pub fn p1(max: u64) -> u64 {
 /// assert_eq!(4_613_732, p2(4_000_000));
 /// ```
 pub fn p2(max: u64) -> u64 {
-    let it = Fibonacci::new().take_while(|i| i < &max);
-    it.fold(0, |acc, i| {
-        if i%2 == 0 {
-            acc + i
-        } else {
-            acc
-        }
-    })
+    Fibonacci::new()
+    .take_while(|i| i < &max)
+    .filter(|i| i%2 == 0)
+    .sum()
 }
 
 /// ### [Largest prime factor](https://projecteuler.net/problem=3)
@@ -57,7 +50,9 @@ pub fn p2(max: u64) -> u64 {
 /// assert_eq!(6857, p3(600_851_475_143));
 /// ```
 pub fn p3(max: u64) -> u64 {
-    *primes::factors(max).iter().max().unwrap()
+    *primes::factors(max)
+    .iter()
+    .max().unwrap()
 }
 
 /// ### [Largest palindrome product](https://projecteuler.net/problem=4)
@@ -71,12 +66,11 @@ pub fn p3(max: u64) -> u64 {
 /// ```
 pub fn p4(max: u64) -> u64 {
     let range = u64::pow(10, max as u32) - 1;
-    let list = Sum::new(range);
-    let result = list.filter(|&i| { 
+    Sum::new(range).filter(|&i| { 
         let a: String = i.to_string().chars().rev().collect();
         i == u64::from_str(&a).unwrap()
-    });
-    result.max().unwrap()
+    })
+    .max().unwrap()
 }
 
 /// ### [Smallest multiple](https://projecteuler.net/problem=5)
@@ -104,10 +98,8 @@ pub fn p5(max: u64) -> u64 {
 /// assert_eq!(25_164_150, p6(100));
 /// ```
 pub fn p6(max: u64) -> u64 {
-    let max = max + 1;
-    let sum_of_squares = (1..max).fold(0u64, |acc, i| acc + (i * i));
-    let sum = (1..max).fold(0u64, |acc, i| acc + i);
-    let square_of_sums = sum * sum;
+    let sum_of_squares = (1..max + 1).fold(0u64, |acc, i| acc + (i * i));
+    let square_of_sums = u64::pow((1..max + 1).sum(), 2);
     square_of_sums - sum_of_squares
 }
 
@@ -122,10 +114,7 @@ pub fn p6(max: u64) -> u64 {
 /// assert_eq!(104743, p7(10_001));
 /// ```
 pub fn p7(max: usize) -> u64 {
-    let max = max - 1;
-    let mut pset = PrimeSet::new();
-    let prime = pset.get(max);
-    prime
+    PrimeSet::new().get(max - 1)
 }
 
 /// ### [Largest product in a series](https://projecteuler.net/problem=8)

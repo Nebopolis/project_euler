@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
-extern crate primes;
+extern crate primal;
 extern crate num;
-use primes::PrimeSet;
+use primal::StreamingSieve;
 //use num::{BigUint, Zero, One};
 //use num::bigint::ToBigUint;
 
@@ -36,7 +36,14 @@ pub fn p1(max: u64) -> u64 {
 /// assert_eq!(4_613_732, p2(4_000_000));
 /// ```
 pub fn p2(max: u64) -> u64 {
-    unimplemented!();
+    let mut it = Fibonacci::new().take_while(|i| i < &max);
+    it.fold(0, |acc, i| {
+        if i%2 == 0 {
+            acc + i
+        } else {
+            acc
+        }
+    })
 }
 
 /// ### [Largest prime factor](https://projecteuler.net/problem=3)
@@ -108,10 +115,7 @@ pub fn p6(max: u64) -> u64 {
 /// assert_eq!(104743, p7(10_001));
 /// ```
 pub fn p7(max: usize) -> u64 {
-    let max = max - 1;
-    let mut pset = PrimeSet::new();
-    let prime = pset.get(max);
-    prime
+   primal::StreamingSieve::nth_prime(max) as u64
 }
 
 /// ### [Largest product in a series](https://projecteuler.net/problem=8)
@@ -164,4 +168,31 @@ pub fn p8(width: usize) -> u64 {
         length += 1;   
     }
     high_total
+}
+
+
+struct Fibonacci {
+    curr: u64,
+    next: u64,
+}
+
+impl Fibonacci {
+    pub fn new() -> Fibonacci {
+        Fibonacci {
+            curr: 0,
+            next: 1,
+        }
+    }
+}
+
+impl Iterator for Fibonacci {
+    type Item = u64;
+    fn next(&mut self) -> Option<u64> {
+        let new_next = self.curr + self.next;
+
+        self.curr = self.next;
+        self.next = new_next;
+
+        Some(self.curr)
+    }
 }

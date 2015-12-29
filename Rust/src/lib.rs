@@ -5,6 +5,7 @@ extern crate primes;
 extern crate num;
 use primes::PrimeSet;
 use std::str::FromStr;
+use std::collections::HashMap;
 //use num::{BigUint, Zero, One};
 //use num::bigint::ToBigUint;
 
@@ -80,10 +81,14 @@ pub fn p4(max: u64) -> u64 {
 /// # Examples
 /// ```
 /// use euler::p5;
-/// assert_eq!(232_792_560, p5(20));
+/// assert_eq!(232792560, p5(20));
 /// ```
 pub fn p5(max: u64) -> u64 {
-    unimplemented!();
+    let numbers = max..;
+    let mut even = numbers.skip_while(|i| {
+        (1..max).any(|j| i%j != 0)
+    });
+    even.next().unwrap()
 }
 
 /// ### [Sum square difference](https://projecteuler.net/problem=6)

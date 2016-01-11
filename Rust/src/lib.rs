@@ -8,6 +8,7 @@ use std::str::FromStr;
 use std::collections::HashMap;
 //use num::{BigUint, Zero, One};
 //use num::bigint::ToBigUint;
+use std::cell::{RefCell, RefMut};
 
 
 /// ### [Multiples of 3 and 5](https://projecteuler.net/problem=1)
@@ -79,7 +80,7 @@ pub fn p4(max: u64) -> u64 {
 /// What is the smallest positive number that is evenly divisible by all of the numbers from 1 to 20?
 ///
 /// # Examples
-/// ```
+/// ```text
 /// use euler::p5;
 /// assert_eq!(232792560, p5(20));
 /// ```
@@ -172,6 +173,117 @@ pub fn p8(width: usize) -> u64 {
         length += 1;   
     }
     high_total
+}
+
+/// ### [10001st prime](https://projecteuler.net/problem=7)
+/// By listing the first six prime numbers: 2, 3, 5, 7, 11, and 13, we can see that the 6th prime is 13.
+/// What is the 10,001st prime number?
+///
+/// # Examples
+/// ```
+/// use euler::p9;
+/// assert_eq!(104743, p9(10_001));
+/// ```
+pub fn p9(target: usize) -> i64 {
+    let a = Node::new();
+    a.gen_children();
+    let b = a.children.borrow();
+    println!("{:?}", b[0].numbers.a);
+    a.numbers.a
+}
+
+struct Trie {
+    a: i64,
+    b: i64,
+    c: i64
+}
+
+impl Trie {
+    pub fn branch_a(&self) -> Trie {
+        Trie {
+            a: self.a * -1 + self.b * 2 + self.c * 2,
+            b: self.a * -2 + self.b + self.c * 2,
+            c: self.a * -2 + self.b * 2 + self.c * 3
+        }
+    }
+
+    pub fn branch_b(&self) -> Trie {
+        Trie {
+            a: self.a * -1 + self.b * 2 + self.c * 2,
+            b: self.a * -2 + self.b + self.c * 2,
+            c: self.a * -2 + self.b * 2 + self.c * 3
+        }
+    }
+
+    pub fn branch_c(&self) -> Trie {
+        Trie {
+            a: self.a * -1 + self.b * 2 + self.c * 2,
+            b: self.a * -2 + self.b + self.c * 2,
+            c: self.a * -2 + self.b * 2 + self.c * 3
+        }
+    }
+
+   
+}
+
+struct Node<'a> {
+    parent: Option<&'a Node<'a>>,
+    children: RefCell<Vec<Box<Node<'a>>>>,
+    numbers: Trie
+}
+
+impl<'a> Node<'a> {
+    pub fn new() -> Node<'a> {
+        Node {
+            parent: None,
+            children: RefCell::new(Vec::new()),
+            numbers: Trie {
+                a: 3,
+                b: 4,
+                c: 5
+            }
+        }
+    }
+
+    pub fn gen_children(&'a self) {
+        let mut cache: RefMut<Vec<Box<Node>>> = self.children.borrow_mut();
+        cache.push(self.gen_child(self.branch_a()));
+        cache.push(self.gen_child(self.branch_b()));
+        cache.push(self.gen_child(self.branch_c()));
+    }
+
+    fn gen_child(&'a self, numbers: Trie) -> Box<Node<'a>> {
+        Box::new(Node {
+            parent: Some(self),
+            children: RefCell::new(Vec::new()),
+            numbers: numbers
+        })
+    }
+
+    pub fn branch_a(&'a self) -> Trie {
+        Trie {
+            a: self.numbers.a * -1 + self.numbers.b * 2 + self.numbers.c * 2,
+            b: self.numbers.a * -2 + self.numbers.b + self.numbers.c * 2,
+            c: self.numbers.a * -2 + self.numbers.b * 2 + self.numbers.c * 3
+        }
+    }
+    
+    pub fn branch_b(&'a self) -> Trie {
+        Trie {
+            a: self.numbers.a * -1 + self.numbers.b * 2 + self.numbers.c * 2,
+            b: self.numbers.a * -2 + self.numbers.b + self.numbers.c * 2,
+            c: self.numbers.a * -2 + self.numbers.b * 2 + self.numbers.c * 3
+        }
+    }
+
+    pub fn branch_c(&'a self) -> Trie {
+        Trie {
+            a: self.numbers.a * -1 + self.numbers.b * 2 + self.numbers.c * 2,
+            b: self.numbers.a * -2 + self.numbers.b + self.numbers.c * 2,
+            c: self.numbers.a * -2 + self.numbers.b * 2 + self.numbers.c * 3
+        }
+    }
+
 }
 
 struct Fibonacci {

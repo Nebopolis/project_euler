@@ -188,10 +188,13 @@ pub fn p9(target: usize) -> i64 {
     let a = Node::new();
     a.gen_children();
     let b = a.children.borrow();
-    println!("{:?}", b[0].numbers.a);
-    a.numbers.a
+    let c = b.as_ref();
+    let d = c.unwrap();
+    println!("{:?}", d[0].numbers);
+    2
 }
 
+#[derive(Debug)]
 struct Trie {
     a: i64,
     b: i64,
@@ -199,6 +202,7 @@ struct Trie {
 }
 
 impl Trie {
+
     pub fn branch_a(&self) -> Trie {
         Trie {
             a: self.a * -1 + self.b * 2 + self.c * 2,
@@ -209,26 +213,27 @@ impl Trie {
 
     pub fn branch_b(&self) -> Trie {
         Trie {
-            a: self.a * -1 + self.b * 2 + self.c * 2,
-            b: self.a * -2 + self.b + self.c * 2,
-            c: self.a * -2 + self.b * 2 + self.c * 3
+            a: self.a + self.b * 2 + self.c * 2,
+            b: self.a * 2 + self.b + self.c * 2,
+            c: self.a * 2 + self.b * 2 + self.c * 3
         }
     }
 
     pub fn branch_c(&self) -> Trie {
         Trie {
-            a: self.a * -1 + self.b * 2 + self.c * 2,
-            b: self.a * -2 + self.b + self.c * 2,
-            c: self.a * -2 + self.b * 2 + self.c * 3
+            a: self.a + self.b * -2 + self.c * 2,
+            b: self.a * 2 + self.b * -1 + self.c * 2,
+            c: self.a * -2 + self.b * -2 + self.c * 3
         }
     }
 
    
 }
 
+#[derive(Debug)]
 struct Node<'a> {
     parent: Option<&'a Node<'a>>,
-    children: RefCell<Vec<Box<Node<'a>>>>,
+    children: RefCell<Option<[Box<Node<'a>>; 3]>>,
     numbers: Trie
 }
 
@@ -236,7 +241,7 @@ impl<'a> Node<'a> {
     pub fn new() -> Node<'a> {
         Node {
             parent: None,
-            children: RefCell::new(Vec::new()),
+            children: RefCell::new(None),
             numbers: Trie {
                 a: 3,
                 b: 4,
@@ -246,16 +251,17 @@ impl<'a> Node<'a> {
     }
 
     pub fn gen_children(&'a self) {
-        let mut cache: RefMut<Vec<Box<Node>>> = self.children.borrow_mut();
-        cache.push(self.gen_child(self.branch_a()));
-        cache.push(self.gen_child(self.branch_b()));
-        cache.push(self.gen_child(self.branch_c()));
+        let mut cache = self.children.borrow_mut();
+        let children = [self.gen_child(self.numbers.branch_a()),
+        self.gen_child(self.numbers.branch_b()),
+        self.gen_child(self.numbers.branch_c())];
+        *cache = Some(children);
     }
 
     fn gen_child(&'a self, numbers: Trie) -> Box<Node<'a>> {
         Box::new(Node {
             parent: Some(self),
-            children: RefCell::new(Vec::new()),
+            children: RefCell::new(None),
             numbers: numbers
         })
     }

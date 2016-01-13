@@ -8,7 +8,7 @@ use std::str::FromStr;
 use std::collections::HashMap;
 //use num::{BigUint, Zero, One};
 //use num::bigint::ToBigUint;
-use std::cell::{RefCell, RefMut};
+use std::cell::{RefCell, RefMut, Ref};
 
 
 /// ### [Multiples of 3 and 5](https://projecteuler.net/problem=1)
@@ -187,10 +187,9 @@ pub fn p8(width: usize) -> u64 {
 pub fn p9(target: usize) -> i64 {
     let a = Node::new();
     a.gen_children();
-    let b = a.children.borrow();
-    let c = b.as_ref();
-    let d = c.unwrap();
-    println!("{:?}", d[0].numbers);
+    let b = &a.children.borrow();
+    let c = &b.as_ref().unwrap();
+    println!("{:?}", c[0].numbers);
     2
 }
 
@@ -202,6 +201,10 @@ struct Trie {
 }
 
 impl Trie {
+
+    pub fn sum(&self) -> u64 {
+        (self.a + self.b + self.c) as u64
+    }
 
     pub fn branch_a(&self) -> Trie {
         Trie {
@@ -252,10 +255,12 @@ impl<'a> Node<'a> {
 
     pub fn gen_children(&'a self) {
         let mut cache = self.children.borrow_mut();
-        let children = [self.gen_child(self.numbers.branch_a()),
-        self.gen_child(self.numbers.branch_b()),
-        self.gen_child(self.numbers.branch_c())];
-        *cache = Some(children);
+        if !cache.is_some() {
+            let children = [self.gen_child(self.numbers.branch_a()),
+            self.gen_child(self.numbers.branch_b()),
+            self.gen_child(self.numbers.branch_c())];
+            *cache = Some(children);
+        }
     }
 
     fn gen_child(&'a self, numbers: Trie) -> Box<Node<'a>> {
@@ -266,28 +271,16 @@ impl<'a> Node<'a> {
         })
     }
 
-    pub fn branch_a(&'a self) -> Trie {
-        Trie {
-            a: self.numbers.a * -1 + self.numbers.b * 2 + self.numbers.c * 2,
-            b: self.numbers.a * -2 + self.numbers.b + self.numbers.c * 2,
-            c: self.numbers.a * -2 + self.numbers.b * 2 + self.numbers.c * 3
-        }
-    }
-    
-    pub fn branch_b(&'a self) -> Trie {
-        Trie {
-            a: self.numbers.a * -1 + self.numbers.b * 2 + self.numbers.c * 2,
-            b: self.numbers.a * -2 + self.numbers.b + self.numbers.c * 2,
-            c: self.numbers.a * -2 + self.numbers.b * 2 + self.numbers.c * 3
-        }
+    fn a(&'a self) -> &'a Node {
+        self.gen_children();
+        let children_cell: &'a Ref<Option<_>> = self.children.borrow();
+        let children = children_cell.as_ref().unwrap();
+        let child_a: &'a Node = &children[0];
+        &child_a
     }
 
-    pub fn branch_c(&'a self) -> Trie {
-        Trie {
-            a: self.numbers.a * -1 + self.numbers.b * 2 + self.numbers.c * 2,
-            b: self.numbers.a * -2 + self.numbers.b + self.numbers.c * 2,
-            c: self.numbers.a * -2 + self.numbers.b * 2 + self.numbers.c * 3
-        }
+    fn find_depth(&'a self, target_sum: u64) {
+
     }
 
 }

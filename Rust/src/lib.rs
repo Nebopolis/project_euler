@@ -6,6 +6,7 @@ extern crate num;
 use primes::PrimeSet;
 use std::str::FromStr;
 use std::collections::HashMap;
+use std::collections::LinkedList;
 //use num::{BigUint, Zero, One};
 //use num::bigint::ToBigUint;
 use std::cell::{RefCell, RefMut, Ref};
@@ -185,37 +186,117 @@ pub fn p8(width: usize) -> u64 {
 /// assert_eq!(104743, p9(10_001));
 /// ```
 pub fn p9(target: usize) -> i64 {
-    let a = Node::new();
-    a.gen_children();
-    let b = &a.children.borrow();
-    let c = &b.as_ref().unwrap();
-    println!("{:?}", c[0].numbers);
+    let mut a = Trie::new();
+    a.next_node();
+    a.next_node();
+    a.next_node();
+    a.next_node();
+    println!("{:?}", a);
     2
 }
 
 #[derive(Debug)]
 struct Trie {
+    parent: Option<[i64;3]>,
+    parent_branch: Branch,
+    branch: Branch,
     a: i64,
     b: i64,
     c: i64
 }
 
+#[derive(Debug, Clone, Copy)]
+enum Branch {
+    A,
+    B,
+    C
+}
+
 impl Trie {
+
+    pub fn new() -> Trie{
+         Trie {
+            parent: None,
+            branch: Branch::C,
+            parent_branch: Branch::C,
+            a: 3,
+            b: 4,
+            c: 5,
+        }
+    }
 
     pub fn sum(&self) -> u64 {
         (self.a + self.b + self.c) as u64
     }
 
+    pub fn parent(&self) -> Trie {
+        match self.parent {
+            Some(parent) => {
+                Trie {
+                    parent: None,
+                    branch: self.parent_branch,
+                    parent_branch: Branch::C,
+                    a: parent[0],
+                    b: parent[1],
+                    c: parent[2],
+                }
+            },
+            None => Trie::new()
+        }
+    }
+
     pub fn branch_a(&self) -> Trie {
         Trie {
+            parent: Some([self.a, self.b, self.c]),
+            branch: Branch::A,
+            parent_branch: self.branch,
             a: self.a * -1 + self.b * 2 + self.c * 2,
             b: self.a * -2 + self.b + self.c * 2,
             c: self.a * -2 + self.b * 2 + self.c * 3
         }
     }
 
+    pub fn next_node(&mut self) -> Trie {
+        match self.branch {
+            Branch::A => {
+                self.a = self.parent().branch_b().a;
+                self.b = self.parent().branch_b().b;
+                self.c = self.parent().branch_b().c;
+                self.branch = Branch::B
+                self.parent().branch_b()
+            },
+            Branch::B => {
+                self.a = self.parent().branch_c().a;
+                self.b = self.parent().branch_c().b;
+                self.c = self.parent().branch_c().c;
+                self.branch = Branch::C
+                self.parent().branch_c()
+            }
+            Branch::C => {
+                match self.parent_branch {
+                    Branch::A | Branch::B => {
+                        self.a = self.parent().next_node().a;
+                        self.b = self.parent().next_node().b;
+                        self.c = self.parent().next_node().c;
+                        self.branch = self.parent().next_node().branch;
+                        self.parent().next_node();
+                        *self = self.parent().next_node();
+                        *self
+                    }
+                    Branch::C => {
+                        *self = self.parent().branch_a().branch_a();
+                        *self
+                    }
+                }
+            }
+        }
+    }
+
     pub fn branch_b(&self) -> Trie {
         Trie {
+            parent: Some([self.a, self.b, self.c]),
+            branch: Branch::B,
+            parent_branch: self.branch,
             a: self.a + self.b * 2 + self.c * 2,
             b: self.a * 2 + self.b + self.c * 2,
             c: self.a * 2 + self.b * 2 + self.c * 3
@@ -224,65 +305,22 @@ impl Trie {
 
     pub fn branch_c(&self) -> Trie {
         Trie {
+            parent: Some([self.a, self.b, self.c]),
+            branch: Branch::C,
+            parent_branch: self.branch,
             a: self.a + self.b * -2 + self.c * 2,
             b: self.a * 2 + self.b * -1 + self.c * 2,
             c: self.a * -2 + self.b * -2 + self.c * 3
         }
     }
-
-   
 }
 
-#[derive(Debug)]
-struct Node<'a> {
-    parent: Option<&'a Node<'a>>,
-    children: RefCell<Option<[Box<Node<'a>>; 3]>>,
-    numbers: Trie
-}
-
-impl<'a> Node<'a> {
-    pub fn new() -> Node<'a> {
-        Node {
-            parent: None,
-            children: RefCell::new(None),
-            numbers: Trie {
-                a: 3,
-                b: 4,
-                c: 5
-            }
-        }
+impl Iterator for Trie {
+    type Item = Trie;
+    fn next(&mut self) -> Option<Trie> {
+        self.next_node();
+        Some(*self)
     }
-
-    pub fn gen_children(&'a self) {
-        let mut cache = self.children.borrow_mut();
-        if !cache.is_some() {
-            let children = [self.gen_child(self.numbers.branch_a()),
-            self.gen_child(self.numbers.branch_b()),
-            self.gen_child(self.numbers.branch_c())];
-            *cache = Some(children);
-        }
-    }
-
-    fn gen_child(&'a self, numbers: Trie) -> Box<Node<'a>> {
-        Box::new(Node {
-            parent: Some(self),
-            children: RefCell::new(None),
-            numbers: numbers
-        })
-    }
-
-    fn a(&'a self) -> &'a Node {
-        self.gen_children();
-        let children_cell: &'a Ref<Option<_>> = self.children.borrow();
-        let children = children_cell.as_ref().unwrap();
-        let child_a: &'a Node = &children[0];
-        &child_a
-    }
-
-    fn find_depth(&'a self, target_sum: u64) {
-
-    }
-
 }
 
 struct Fibonacci {

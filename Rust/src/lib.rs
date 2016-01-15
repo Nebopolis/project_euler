@@ -10,6 +10,7 @@ use std::collections::LinkedList;
 //use num::{BigUint, Zero, One};
 //use num::bigint::ToBigUint;
 use std::cell::{RefCell, RefMut, Ref};
+use std::rc::{Rc, Weak};
 
 
 /// ### [Multiples of 3 and 5](https://projecteuler.net/problem=1)
@@ -341,3 +342,45 @@ impl Iterator for Sum {
         Some(sum)
     }
 }
+
+#[derive(Debug)]
+struct Tree<T> {
+    parent: Option<Rc<Tree<T>>>,
+    children: RefCell<Vec<Weak<Tree<T>>>>,
+    value: Box<T>
+}
+
+impl<T> Tree<T> {
+    pub fn new(value:T) -> Tree<T> {
+        Tree {
+            parent: None,
+            children: RefCell::new(Vec::new()),
+            value: Box::new(value)
+        }
+    }
+
+    pub fn child(self, value: T) -> Tree<T> {
+        let parent = Rc::new(self);
+        let child = Rc::new(Tree {
+            parent: Some(parent.clone()),
+            children: RefCell::new(Vec::new()),
+            value: Box::new(value)
+        });
+        parent.children.borrow_mut().push(Rc::downgrade(&child));
+        match Rc::try_unwrap(child) {
+            Ok(child) => {
+                Some(child)
+            },
+            _ => None
+        }.unwrap()  //we just created the child, so there should never be additional refrences to it
+    }
+}
+
+
+#[test]
+fn tree_test() {
+    let test = Tree::new(1);
+    println!("{:?}", test.child(2));
+    assert!(false);
+}
+

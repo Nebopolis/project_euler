@@ -197,8 +197,6 @@ pub fn p9(target: usize) -> i64 {
 
 #[derive(Debug)]
 struct Trie {
-    parent: Option<[i64;3]>,
-    parent_branch: Branch,
     branch: Branch,
     a: i64,
     b: i64,
@@ -216,9 +214,7 @@ impl Trie {
 
     pub fn new() -> Trie{
          Trie {
-            parent: None,
             branch: Branch::C,
-            parent_branch: Branch::C,
             a: 3,
             b: 4,
             c: 5,
@@ -230,26 +226,17 @@ impl Trie {
     }
 
     pub fn parent(&self) -> Trie {
-        match self.parent {
-            Some(parent) => {
-                Trie {
-                    parent: None,
-                    branch: self.parent_branch,
-                    parent_branch: Branch::C,
-                    a: parent[0],
-                    b: parent[1],
-                    c: parent[2],
-                }
-            },
-            None => Trie::new()
-        }
+        Trie {
+            branch: Branch::A, //TODO: FIX
+            a: 3,
+            b: 4,
+            c: 5,
+        } 
     }
 
     pub fn branch_a(&self) -> Trie {
         Trie {
-            parent: Some([self.a, self.b, self.c]),
             branch: Branch::A,
-            parent_branch: self.branch,
             a: self.a * -1 + self.b * 2 + self.c * 2,
             b: self.a * -2 + self.b + self.c * 2,
             c: self.a * -2 + self.b * 2 + self.c * 3
@@ -259,33 +246,18 @@ impl Trie {
     pub fn next_node(&mut self) -> Trie {
         match self.branch {
             Branch::A => {
-                self.a = self.parent().branch_b().a;
-                self.b = self.parent().branch_b().b;
-                self.c = self.parent().branch_b().c;
-                self.branch = Branch::B
                 self.parent().branch_b()
             },
             Branch::B => {
-                self.a = self.parent().branch_c().a;
-                self.b = self.parent().branch_c().b;
-                self.c = self.parent().branch_c().c;
-                self.branch = Branch::C
                 self.parent().branch_c()
             }
             Branch::C => {
-                match self.parent_branch {
+                match self.parent().branch {
                     Branch::A | Branch::B => {
-                        self.a = self.parent().next_node().a;
-                        self.b = self.parent().next_node().b;
-                        self.c = self.parent().next_node().c;
-                        self.branch = self.parent().next_node().branch;
-                        self.parent().next_node();
-                        *self = self.parent().next_node();
-                        *self
+                        self.parent().next_node()
                     }
                     Branch::C => {
-                        *self = self.parent().branch_a().branch_a();
-                        *self
+                        self.parent().branch_a().branch_a()
                     }
                 }
             }
@@ -294,9 +266,7 @@ impl Trie {
 
     pub fn branch_b(&self) -> Trie {
         Trie {
-            parent: Some([self.a, self.b, self.c]),
             branch: Branch::B,
-            parent_branch: self.branch,
             a: self.a + self.b * 2 + self.c * 2,
             b: self.a * 2 + self.b + self.c * 2,
             c: self.a * 2 + self.b * 2 + self.c * 3
@@ -305,21 +275,11 @@ impl Trie {
 
     pub fn branch_c(&self) -> Trie {
         Trie {
-            parent: Some([self.a, self.b, self.c]),
             branch: Branch::C,
-            parent_branch: self.branch,
             a: self.a + self.b * -2 + self.c * 2,
             b: self.a * 2 + self.b * -1 + self.c * 2,
             c: self.a * -2 + self.b * -2 + self.c * 3
         }
-    }
-}
-
-impl Iterator for Trie {
-    type Item = Trie;
-    fn next(&mut self) -> Option<Trie> {
-        self.next_node();
-        Some(*self)
     }
 }
 

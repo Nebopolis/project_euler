@@ -11,6 +11,8 @@ use std::collections::LinkedList;
 //use num::bigint::ToBigUint;
 use std::cell::{RefCell, RefMut, Ref};
 use std::rc::{Rc, Weak};
+use std::iter::{IntoIterator, Iterator};
+use std::option::IntoIter;
 
 
 /// ### [Multiples of 3 and 5](https://projecteuler.net/problem=1)
@@ -188,101 +190,10 @@ pub fn p8(width: usize) -> u64 {
 /// ```
 pub fn p9(target: usize) -> i64 {
     let mut a = Trie::new();
-    a.next_node();
-    a.next_node();
-    a.next_node();
-    a.next_node();
-    println!("{:?}", a);
+        println!("{:?}", a);
     2
 }
 
-#[derive(Debug)]
-struct Trie {
-    branch: Branch,
-    a: i64,
-    b: i64,
-    c: i64
-}
-
-#[derive(Debug, Clone, Copy)]
-enum Branch {
-    A,
-    B,
-    C
-}
-
-impl Trie {
-
-    pub fn new() -> Trie{
-         Trie {
-            branch: Branch::C,
-            a: 3,
-            b: 4,
-            c: 5,
-        }
-    }
-
-    pub fn sum(&self) -> u64 {
-        (self.a + self.b + self.c) as u64
-    }
-
-    pub fn parent(&self) -> Trie {
-        Trie {
-            branch: Branch::A, //TODO: FIX
-            a: 3,
-            b: 4,
-            c: 5,
-        } 
-    }
-
-    pub fn branch_a(&self) -> Trie {
-        Trie {
-            branch: Branch::A,
-            a: self.a * -1 + self.b * 2 + self.c * 2,
-            b: self.a * -2 + self.b + self.c * 2,
-            c: self.a * -2 + self.b * 2 + self.c * 3
-        }
-    }
-
-    pub fn next_node(&mut self) -> Trie {
-        match self.branch {
-            Branch::A => {
-                self.parent().branch_b()
-            },
-            Branch::B => {
-                self.parent().branch_c()
-            }
-            Branch::C => {
-                match self.parent().branch {
-                    Branch::A | Branch::B => {
-                        self.parent().next_node()
-                    }
-                    Branch::C => {
-                        self.parent().branch_a().branch_a()
-                    }
-                }
-            }
-        }
-    }
-
-    pub fn branch_b(&self) -> Trie {
-        Trie {
-            branch: Branch::B,
-            a: self.a + self.b * 2 + self.c * 2,
-            b: self.a * 2 + self.b + self.c * 2,
-            c: self.a * 2 + self.b * 2 + self.c * 3
-        }
-    }
-
-    pub fn branch_c(&self) -> Trie {
-        Trie {
-            branch: Branch::C,
-            a: self.a + self.b * -2 + self.c * 2,
-            b: self.a * 2 + self.b * -1 + self.c * 2,
-            c: self.a * -2 + self.b * -2 + self.c * 3
-        }
-    }
-}
 
 struct Fibonacci {
     curr: u64,
@@ -367,12 +278,33 @@ impl<T> Tree<T> {
             value: Box::new(value)
         });
         parent.children.borrow_mut().push(Rc::downgrade(&child));
-        match Rc::try_unwrap(child) {
-            Ok(child) => {
-                Some(child)
-            },
-            _ => None
-        }.unwrap()  //we just created the child, so there should never be additional refrences to it
+        Rc::try_unwrap(child).ok().unwrap()  //we just created the child, so there should never be additional refrences to it
+    }
+}
+
+
+#[derive(Debug)]
+struct Trie {
+    branch: Branch,
+    a: i64,
+    b: i64,
+    c: i64
+}
+
+#[derive(Debug, Clone, Copy)]
+enum Branch {
+    A,
+    B,
+    C
+}
+
+impl<T> IntoIterator for Tree<T> {
+    type Item = Tree<T>;
+    type IntoIter = std::option::IntoIter<Tree<T>>;  
+    fn into_iter(self) -> Self::IntoIter {
+        let children_iter = self.children.borrow().clone()
+        .into_iter();
+        Some(self).into_iter().chain(children_iter)
     }
 }
 
@@ -384,3 +316,46 @@ fn tree_test() {
     assert!(false);
 }
 
+
+impl Trie {
+
+    pub fn new() -> Trie{
+         Trie {
+            branch: Branch::C,
+            a: 3,
+            b: 4,
+            c: 5,
+        }
+    }
+
+    pub fn sum(&self) -> u64 {
+        (self.a + self.b + self.c) as u64
+    }
+
+    pub fn branch_a(&self) -> Trie {
+        Trie {
+            branch: Branch::A,
+            a: self.a * -1 + self.b * 2 + self.c * 2,
+            b: self.a * -2 + self.b + self.c * 2,
+            c: self.a * -2 + self.b * 2 + self.c * 3
+        }
+    }
+
+    pub fn branch_b(&self) -> Trie {
+        Trie {
+            branch: Branch::B,
+            a: self.a + self.b * 2 + self.c * 2,
+            b: self.a * 2 + self.b + self.c * 2,
+            c: self.a * 2 + self.b * 2 + self.c * 3
+        }
+    }
+
+    pub fn branch_c(&self) -> Trie {
+        Trie {
+            branch: Branch::C,
+            a: self.a + self.b * -2 + self.c * 2,
+            b: self.a * 2 + self.b * -1 + self.c * 2,
+            c: self.a * -2 + self.b * -2 + self.c * 3
+        }
+    }
+}

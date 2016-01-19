@@ -189,8 +189,8 @@ pub fn p8(width: usize) -> u64 {
 /// assert_eq!(104743, p9(10_001));
 /// ```
 pub fn p9(target: usize) -> i64 {
-    let mut a = Trie::new();
-        println!("{:?}", a);
+    //let mut a = Trie::new();
+      //  println!("{:?}", a);
     2
 }
 
@@ -255,43 +255,14 @@ impl Iterator for Sum {
 }
 
 #[derive(Debug)]
-struct Tree<T> {
-    parent: Option<Rc<Tree<T>>>,
-    children: RefCell<Vec<Weak<Tree<T>>>>,
-    value: Box<T>
-}
-
-#[derive(Debug)]
-struct TreeIterator<T> {
-    stack: Vec<Weak<Tree<T>>>,
-    current: Option<Box<T>>
-}
-
-impl<T> Tree<T> {
-    pub fn new(value:T) -> Tree<T> {
-        Tree {
-            parent: None,
-            children: RefCell::new(Vec::new()),
-            value: Box::new(value)
-        }
-    }
-
-    pub fn child(self, value: T) -> Tree<T> {
-        let parent = Rc::new(self);
-        let child = Rc::new(Tree {
-            parent: Some(parent.clone()),
-            children: RefCell::new(Vec::new()),
-            value: Box::new(value)
-        });
-        parent.children.borrow_mut().push(Rc::downgrade(&child));
-        Rc::try_unwrap(child).ok().unwrap()  //we just created the child, so there should never be additional refrences to it
-    }
+struct Tree {
+    stack: Vec<Trie>,
+    current: Option<Trie>
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 struct Trie {
-    branch: Branch,
     a: i64,
     b: i64,
     c: i64
@@ -304,46 +275,33 @@ enum Branch {
     C
 }
 
-// impl<T> IntoIterator for Tree<T> {
-//     type Item = Tree<T>;
-//     type IntoIter = std::option::IntoIter<Tree<T>>;  
-//     fn into_iter(self) -> Self::IntoIter {
-//         let children_iter = self.children.borrow().clone()
-//         .into_iter();
-//         Some(self).into_iter().chain(children_iter)
-//     }
-// }
 
-impl<T> TreeIterator<T> {
-    fn new(node: Tree<T>) -> TreeIterator<T> {
-        let mut iter = TreeIterator {
+impl Tree {
+    fn new(node: Trie) -> Tree {
+        Tree {
             stack: Vec::new(),
-            current: None
-        };
-        iter.add_children(node);
-        iter
+            current: Some(node)
+        }
     }
-    fn add_children(&mut self, node: Tree<T>) {
-        self.current = Some(node.value);
-        for child in node.children.borrow().iter() {
-            self.stack.push(child.clone());
+    fn add_children(&mut self, node: Trie) {
+        for branch in [Branch::A, Branch::B, Branch::C].iter() {
+            let child = node.make_child(branch);
+            self.stack.push(child);
+        }
+        if let Some(next) = self.stack.pop() {
+            self.current = Some(next);
         }
     }
 }
 
-impl<T> Iterator for TreeIterator<T> {
-    type Item = Box<T>;
+impl Iterator for Tree {
+    type Item = Trie;
 
-    fn next(&mut self) -> Option<Box<T>> {
-        // Get the item we're going to return.
-        let result = self.current;
-
-        // Now add the next left subtree
-        // (this is the "recursive call")
-       // if let Some(node) = self.right_nodes.pop() {
-       //     self.add_left_subtree(node);
-       // }
-
+    fn next(&mut self) -> Option<Trie> {
+        let result = self.current.take();
+        if let Some(node) = result {
+            self.add_children(node);
+        }
         result
     }
 }
@@ -351,8 +309,11 @@ impl<T> Iterator for TreeIterator<T> {
 
 #[test]
 fn tree_test() {
-    let test = Tree::new(1);
-    println!("{:?}", test.child(2));
+    let mut test = Tree::new(Trie::new());
+
+    for child in test.into_iter().take_while(|a| a.sum() < 1500) {
+        println!("{:?}", child.sum())
+    }
     assert!(false);
 }
 
@@ -361,7 +322,6 @@ impl Trie {
 
     pub fn new() -> Trie{
          Trie {
-            branch: Branch::C,
             a: 3,
             b: 4,
             c: 5,
@@ -372,30 +332,23 @@ impl Trie {
         (self.a + self.b + self.c) as u64
     }
 
-    pub fn branch_a(&self) -> Trie {
-        Trie {
-            branch: Branch::A,
-            a: self.a * -1 + self.b * 2 + self.c * 2,
-            b: self.a * -2 + self.b + self.c * 2,
-            c: self.a * -2 + self.b * 2 + self.c * 3
-        }
-    }
-
-    pub fn branch_b(&self) -> Trie {
-        Trie {
-            branch: Branch::B,
-            a: self.a + self.b * 2 + self.c * 2,
-            b: self.a * 2 + self.b + self.c * 2,
-            c: self.a * 2 + self.b * 2 + self.c * 3
-        }
-    }
-
-    pub fn branch_c(&self) -> Trie {
-        Trie {
-            branch: Branch::C,
-            a: self.a + self.b * -2 + self.c * 2,
-            b: self.a * 2 + self.b * -1 + self.c * 2,
-            c: self.a * -2 + self.b * -2 + self.c * 3
+    pub fn make_child(&self, branch: &Branch) -> Trie {
+        match branch {
+            &Branch::A => Trie {
+                a: self.a * -1 + self.b * 2 + self.c * 2,
+                b: self.a * -2 + self.b + self.c * 2,
+                c: self.a * -2 + self.b * 2 + self.c * 3
+            },
+            &Branch::B => Trie {
+                a: self.a + self.b * 2 + self.c * 2,
+                b: self.a * 2 + self.b + self.c * 2,
+                c: self.a * 2 + self.b * 2 + self.c * 3
+            },
+            &Branch::C => Trie {
+                a: self.a + self.b * -2 + self.c * 2,
+                b: self.a * 2 + self.b * -1 + self.c * 2,
+                c: self.a * 2 + self.b * -2 + self.c * 3
+            }
         }
     }
 }

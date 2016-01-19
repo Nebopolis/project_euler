@@ -261,6 +261,12 @@ struct Tree<T> {
     value: Box<T>
 }
 
+#[derive(Debug)]
+struct TreeIterator<T> {
+    stack: Vec<Weak<Tree<T>>>,
+    current: Option<Box<T>>
+}
+
 impl<T> Tree<T> {
     pub fn new(value:T) -> Tree<T> {
         Tree {
@@ -298,13 +304,47 @@ enum Branch {
     C
 }
 
-impl<T> IntoIterator for Tree<T> {
-    type Item = Tree<T>;
-    type IntoIter = std::option::IntoIter<Tree<T>>;  
-    fn into_iter(self) -> Self::IntoIter {
-        let children_iter = self.children.borrow().clone()
-        .into_iter();
-        Some(self).into_iter().chain(children_iter)
+// impl<T> IntoIterator for Tree<T> {
+//     type Item = Tree<T>;
+//     type IntoIter = std::option::IntoIter<Tree<T>>;  
+//     fn into_iter(self) -> Self::IntoIter {
+//         let children_iter = self.children.borrow().clone()
+//         .into_iter();
+//         Some(self).into_iter().chain(children_iter)
+//     }
+// }
+
+impl<T> TreeIterator<T> {
+    fn new(node: Tree<T>) -> TreeIterator<T> {
+        let mut iter = TreeIterator {
+            stack: Vec::new(),
+            current: None
+        };
+        iter.add_children(node);
+        iter
+    }
+    fn add_children(&mut self, node: Tree<T>) {
+        self.current = Some(node.value);
+        for child in node.children.borrow().iter() {
+            self.stack.push(child.clone());
+        }
+    }
+}
+
+impl<T> Iterator for TreeIterator<T> {
+    type Item = Box<T>;
+
+    fn next(&mut self) -> Option<Box<T>> {
+        // Get the item we're going to return.
+        let result = self.current;
+
+        // Now add the next left subtree
+        // (this is the "recursive call")
+       // if let Some(node) = self.right_nodes.pop() {
+       //     self.add_left_subtree(node);
+       // }
+
+        result
     }
 }
 

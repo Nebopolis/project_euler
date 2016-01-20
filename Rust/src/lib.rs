@@ -284,13 +284,15 @@ impl Tree {
         }
     }
     fn add_children(&mut self, node: Trie) {
-        for branch in [Branch::A, Branch::B, Branch::C].iter() {
-            let child = node.make_child(branch);
-            self.stack.push(child);
+        if node.sum() < 1000 {
+                for branch in [Branch::A, Branch::B, Branch::C].iter() {
+                let child = node.make_child(branch);
+                self.stack.push(child);
+            }
         }
-        if let Some(next) = self.stack.pop() {
-            self.current = Some(next);
-        }
+        println!("{:?}", self.stack.len());
+        let next = self.stack.remove(0);
+        self.current = Some(next);
     }
 }
 
@@ -302,6 +304,7 @@ impl Iterator for Tree {
         if let Some(node) = result {
             self.add_children(node);
         }
+        //println!("{:?}", self.stack);
         result
     }
 }
@@ -311,8 +314,11 @@ impl Iterator for Tree {
 fn tree_test() {
     let mut test = Tree::new(Trie::new());
 
-    for child in test.into_iter().take_while(|a| a.sum() < 1500) {
-        println!("{:?}", child.sum())
+    for child in test.into_iter().take(10000) {
+        //let sum = child.sum();
+       // if sum > 900 && sum < 1100 {
+            println!("{:?}, sum:{:?}",child, child.sum())
+        //}
     }
     assert!(false);
 }

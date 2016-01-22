@@ -1,0 +1,9 @@
+[package]
+name = "goofy"
+version = "0.1.0"
+authors = ["Ben Evans <bevans@zendesk.com>"]
+
+[dependencies.iron]
+version = "*"
+[dependencies.mysql]
+mysql = "*"
